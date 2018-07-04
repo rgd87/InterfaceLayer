@@ -87,6 +87,7 @@ function Layer:Unparent(frame)
         frame:SetParent(UIParent)
         -- frame:SetFrameStrata("MEDIUM")
         self.childFrames[frame] = nil
+        return true
     end
 end
 
@@ -159,9 +160,9 @@ Layer.Commands = {
     ["remove"] = function(frameName)
         local frame = _G[frameName]
         
-
-        if Layer:Reparent(frameName) then
+        if Layer:Unparent(frame) then
             db.frames[frameName] = true
+            print("Removed:", frameName)
         end
     end,
 
