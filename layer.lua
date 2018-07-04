@@ -161,7 +161,7 @@ Layer.Commands = {
         local frame = _G[frameName]
         
         if Layer:Unparent(frame) then
-            db.frames[frameName] = true
+            db.frames[frameName] = nil
             print("Removed:", frameName)
         end
     end,
