@@ -247,7 +247,7 @@ end
 function ns.RemoveDefaults(t, defaults)
     for k, v in pairs(defaults) do
         if type(t[k]) == 'table' and type(v) == 'table' then
-            RemoveDefaults(t[k], v)
+            ns.RemoveDefaults(t[k], v)
             if next(t[k]) == nil then
                 t[k] = nil
             end
