@@ -57,6 +57,8 @@ local blacklist = {
 }
 
 function Layer:Reparent(frame)
+    if frame == nil then return end
+
     if type(frame) == "string" then
         frame = _G[frame]
     end
