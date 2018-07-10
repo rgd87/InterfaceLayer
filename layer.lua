@@ -57,11 +57,11 @@ local blacklist = {
 }
 
 function Layer:Reparent(frame)
-    if frame == nil then return end
-
     if type(frame) == "string" then
         frame = _G[frame]
     end
+
+    if frame == nil then return end
 
     if not frame:IsObjectType("Frame") then
         DEFAULT_CHAT_FRAME:AddMessage(frame:GetName().."is not a frame")
