@@ -37,8 +37,12 @@ function Layer:PLAYER_LOGIN()
 
     for _, snippet in ipairs(db.snippets) do
         local chunk = loadstring("return "..snippet)
-        local frame = chunk()
-        local ok = Layer:Reparent(frame)
+        local frame = xpcall(chunk, function(...)
+            -- print(...)
+        end)
+        if frame then
+            local ok = Layer:Reparent(frame)
+        end
     end
 
     SLASH_INTERFACELAYER1= "/layer"
