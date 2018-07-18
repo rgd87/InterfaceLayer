@@ -1,5 +1,6 @@
 ## Interface: 80000
 ## Title: InterfaceLayer
 ## SavedVariables: LayerDB
+## Version: @project-version@
 
 layer.lua
