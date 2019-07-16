@@ -20,6 +20,7 @@ Layer:RegisterEvent("PLAYER_LOGOUT")
 local defaults = {
     frames = {},
     snippets = {},
+    weakAuras = {},
 }
 
 Layer.childFrames = {}
@@ -49,8 +50,38 @@ function Layer:PLAYER_LOGIN()
         end
     end
 
+    for waID in pairs(db.weakAuras) do
+        local ok = self:ReparentWeakAura(waID)
+        -- if not ok then
+            -- db.frames[frame] = nil
+        -- end
+    end
+
+    local loadedGroups = {}
+    hooksecurefunc(WeakAuras, "LoadDisplays", function(toLoad, ...)
+        table.wipe(loadedGroups)
+
+        for id, loaded in pairs(toLoad) do
+            if loaded then
+                local region = WeakAuras.regions[id].region
+                local parent = region:GetParent()
+                if parent.regionType == "group" then
+                    local groupName = parent.id
+                    loadedGroups[groupName] = true
+                end
+            end
+        end
+
+        for waID in pairs(db.weakAuras) do
+            if toLoad[waID] or loadedGroups[waID] then
+                Layer:ReparentWeakAura(waID)
+            end
+        end
+    end)
+
     SLASH_INTERFACELAYER1= "/layer"
     SLASH_INTERFACELAYER2= "/interfacelayer"
+    SLASH_INTERFACELAYER3= "/ila"
     SlashCmdList["INTERFACELAYER"] = self.SlashCmd
 end
 
@@ -91,6 +122,13 @@ function Layer:Reparent(frame)
     -- frame:SetFrameStrata("DIALOG")
     return true
 end
+function Layer:ReparentWeakAura(waID)
+    local waRegion = WeakAuras.regions[waID]
+    if waRegion then
+        local waFrame = waRegion.region
+        return self:Reparent(waFrame)
+    end
+end
 
 function Layer:Unparent(frame)
     if self.childFrames[frame] then
@@ -130,6 +168,12 @@ Layer.Commands = {
     ["add"] = function(frameName)
         if Layer:Reparent(frameName) then
             db.frames[frameName] = true
+        end
+    end,
+
+    ["addwa"] = function(waName)
+        if Layer:ReparentWeakAura(waName) then
+            db.weakAuras[waName] = true
         end
     end,
 
@@ -174,6 +218,11 @@ Layer.Commands = {
         for i, snippet in ipairs(db.snippets) do
             print("   ",i,"-", snippet)
         end
+
+        print("Layer weakauras:")
+        for waName in pairs(db.weakAuras) do
+            print("   ",waName)
+        end
     end,
 
     ["remove"] = function(frameName)
@@ -193,6 +242,17 @@ Layer.Commands = {
             print("Removed:", snippet)
         end
     end,
+
+    ["removewa"] = function(waName)
+        local waRegion = WeakAuras.regions[waName]
+        if waRegion then
+            local frame = waRegion.region
+
+            Layer:Unparent(frame)
+        end
+        db.weakAuras[waName] = nil
+        print("Removed:", waName)
+    end,
 }
 
 
@@ -200,8 +260,13 @@ function Layer.SlashCmd(msg)
     k,v = string.match(msg, "([%w%+%-%=]+) ?(.*)")
     if not k or k == "help" then
         print([[Usage:
-          |cff55ff55/layer add|r
-          |cff55ff55/layer addmouse|r
+          |cff55ff55/layer add - add frame by its global name|r
+          |cff55ff55/layer addmouse - add frame under mouse cursor|r
+          |cff55ff55/layer addsnippet - add by lua snippet when not directly accessible|r
+          |cff55ff55/layer addwa - add a WeakAura display or group by name|r
+          |cff55ff55/layer remove <name>|r
+          |cff55ff55/layer removesnippet <id>|r
+          |cff55ff55/layer removewa <wa name>|r
           |cff55ff55/layer list|r
           |cff55ff55/layer remove|r
         ]])
