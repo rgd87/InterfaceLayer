@@ -7,6 +7,10 @@ Layer:SetScript("OnEvent", function(self, event, ...)
     return self[event](self, event, ...)
 end)
 
+_G.BINDING_NAME_HOLD_SWITCH = "Hold Activation"
+_G.BINDING_HEADER_INTERFACELAYER = "InterfaceLayer"
+_G.BINDING_NAME_TOGGLE_SWITCH = "Toggle Activation"
+
 -- _G.InterfaceLayer = Layer
 local db
 
@@ -81,7 +85,7 @@ function Layer:Reparent(frame)
         DEFAULT_CHAT_FRAME:AddMessage(frame:GetName().."is protected")
         return
     end
-    
+
     self.childFrames[frame] = true
     frame:SetParent(self)
     -- frame:SetFrameStrata("DIALOG")
@@ -112,6 +116,15 @@ function Layer:Toggle()
     end
 end
 
+function Layer:Activate()
+    self:RefershAllFrames()
+    self:FadeIn()
+end
+function Layer:Deactivate()
+    self:RefershAllFrames()
+    self:FadeOut()
+end
+
 
 Layer.Commands = {
     ["add"] = function(frameName)
@@ -122,7 +135,7 @@ Layer.Commands = {
 
     ["addmouse"] = function()
         local frame = GetMouseFocus()
-    
+
         if not frame then return end
 
         if not frame:IsObjectType("Frame") then
@@ -165,7 +178,7 @@ Layer.Commands = {
 
     ["remove"] = function(frameName)
         local frame = _G[frameName]
-        
+
         if Layer:Unparent(frame) then
             db.frames[frameName] = nil
             print("Removed:", frameName)
@@ -225,7 +238,7 @@ function Layer:Create()
     self:SetFrameLevel(0)
 
     local corner = "TOPRIGHT"
-    
+
     local spot = CreateFrame("Frame", nil, UIParent)
     spot:SetWidth(2)
     spot:SetHeight(2)

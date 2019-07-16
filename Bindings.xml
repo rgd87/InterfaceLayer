@@ -1,0 +1,12 @@
+<Bindings>
+	<Binding name="TOGGLE_SWITCH" header="INTERFACELAYER" category="ADDONS">
+		InterfaceLayer:Toggle()
+	</Binding>
+	<Binding name="HOLD_SWITCH" runOnUp="true" category="ADDONS">
+		if keystate == "down" then
+			InterfaceLayer:Activate()
+		else
+			InterfaceLayer:Deactivate()
+		end
+	</Binding>
+</Bindings>
