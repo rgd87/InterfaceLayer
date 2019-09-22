@@ -21,6 +21,7 @@ local defaults = {
     frames = {},
     snippets = {},
     weakAuras = {},
+    protectedFrames = {},
 }
 
 Layer.childFrames = {}
@@ -58,26 +59,28 @@ function Layer:PLAYER_LOGIN()
     end
 
     local loadedGroups = {}
-    hooksecurefunc(WeakAuras, "LoadDisplays", function(toLoad, ...)
-        table.wipe(loadedGroups)
+    if WeakAuras then
+        hooksecurefunc(WeakAuras, "LoadDisplays", function(toLoad, ...)
+            table.wipe(loadedGroups)
 
-        for id, loaded in pairs(toLoad) do
-            if loaded then
-                local region = WeakAuras.regions[id].region
-                local parent = region:GetParent()
-                if parent.regionType == "group" then
-                    local groupName = parent.id
-                    loadedGroups[groupName] = true
+            for id, loaded in pairs(toLoad) do
+                if loaded then
+                    local region = WeakAuras.regions[id].region
+                    local parent = region:GetParent()
+                    if parent.regionType == "group" then
+                        local groupName = parent.id
+                        loadedGroups[groupName] = true
+                    end
                 end
             end
-        end
 
-        for waID in pairs(db.weakAuras) do
-            if toLoad[waID] or loadedGroups[waID] then
-                Layer:ReparentWeakAura(waID)
+            for waID in pairs(db.weakAuras) do
+                if toLoad[waID] or loadedGroups[waID] then
+                    Layer:ReparentWeakAura(waID)
+                end
             end
-        end
-    end)
+        end)
+    end
 
     SLASH_INTERFACELAYER1= "/layer"
     SLASH_INTERFACELAYER2= "/interfacelayer"
@@ -163,12 +166,36 @@ function Layer:Deactivate()
     self:FadeOut()
 end
 
+function Layer:TempActivation()
+    self:RefershAllFrames()
+    self.texture:SetAlpha(0.2)
+    self:FadeIn(nil, function()
+        self:FadeOut(5, function()
+            self.texture:SetAlpha(0.5)
+        end)
+    end)
+end
+
+local originalSetAlpha = Layer.SetAlpha
+function Layer:SetAlpha(alpha)
+    originalSetAlpha(self, alpha)
+
+    for frameName in pairs(db.protectedFrames) do
+        local frame = _G[frameName]
+        frame:SetAlpha(alpha)
+    end
+end
+
 
 Layer.Commands = {
     ["add"] = function(frameName)
         if Layer:Reparent(frameName) then
             db.frames[frameName] = true
         end
+    end,
+
+    ["addprotected"] = function(frameName)
+        db.protectedFrames[frameName] = true
     end,
 
     ["addwa"] = function(waName)
@@ -257,7 +284,7 @@ Layer.Commands = {
 
 
 function Layer.SlashCmd(msg)
-    k,v = string.match(msg, "([%w%+%-%=]+) ?(.*)")
+    local k,v = string.match(msg, "([%w%+%-%=]+) ?(.*)")
     if not k or k == "help" then
         print([[Usage:
           |cff55ff55/layer add - add frame by its global name|r
@@ -278,23 +305,30 @@ end
 
 
 
-function Layer:FadeOut()
-    UIFrameFadeOut(self, .15, 1, 0)
-    self.fadeInfo.finishedFunc = function() self:Hide() end
+function Layer:FadeOut(fadeTime, fadeFuncExtra)
+    UIFrameFadeOut(self, fadeTime or 0.15, 1, 0)
+    self.fadeInfo.finishedFunc = function()
+        self:Hide()
+        if fadeFuncExtra then
+            fadeFuncExtra()
+        end
+    end
 end
 
-function Layer:FadeIn()
+function Layer:FadeIn(fadeTime, fadeFuncExtra)
     self:Show()
-    UIFrameFadeIn(self, .15, 0, 1)
+    UIFrameFadeIn(self, fadeTime or 0.15, 0, 1)
+    self.fadeInfo.finishedFunc = fadeFuncExtra
 end
 
 function Layer:Create()
     self:Hide()
-    self:SetBackdrop({
-        bgFile = "Interface\\ChatFrame\\ChatFrameBackground", tile = true, tileSize = 16,
-        insets = {left = 0, right = 0, top = 0, bottom = 0},
-    })
-    self:SetBackdropColor(0,0,0,0.5)
+    local texture = self:CreateTexture("LayerBlackoutTexture", "ARTWORK")
+    texture:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    texture:SetAllPoints()
+    texture:SetVertexColor(0,0,0)
+    texture:SetAlpha(0.5)
+    self.texture = texture
 
     self:ClearAllPoints()
     self:SetAllPoints(UIParent)
