@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*'
+      - 'v[0-9]*'
+
+jobs:
+  build:
+
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install and run Luacheck
+        run: |
+          sudo apt-get install luarocks
+          luarocks install --local luacheck
+          /home/runner/.luarocks/bin/luacheck . --no-color -q
+
+      # - name: Notify on Failure
+      #   if: failure()
+      #   run: curl -s https://raw.githubusercontent.com/d87/CITelegramNotification/master/telegram_notify.sh | bash
+      #   env:
+      #     TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+      - name: Create Package
+        run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash;
+        if: '!contains( github.ref, ''beta'')'
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
+          WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+
+      # Double Release
+      # - name: Create Classic Package
+      #   run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -g 1.13.2;
+      #   if: secrets.DOUBLE_RELEASE == true ## BROKEN
+      #   env:
+      #     CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      #     GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
+      #     WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+
+      - name: Create Pre-Release Package
+        run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -p 0 -w 0;
+        if: 'contains( github.ref, ''beta'')'
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
+          WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
+
