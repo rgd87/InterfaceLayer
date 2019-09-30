@@ -9,7 +9,6 @@ on:
 jobs:
   build:
 
-    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -19,11 +18,18 @@ jobs:
           luarocks install --local luacheck
           /home/runner/.luarocks/bin/luacheck . --no-color -q
 
-      # - name: Notify on Failure
-      #   if: failure()
-      #   run: curl -s https://raw.githubusercontent.com/d87/CITelegramNotification/master/telegram_notify.sh | bash
-      #   env:
-      #     TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      - uses: actions/setup-ruby@v1
+      - name: Send Webhook Notification
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          HOOK_OS_NAME: ${{ runner.os }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        run: |
+          git clone https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
+          bash webhook/send.sh $JOB_STATUS $DISCORD_WEBHOOK_URL
+        shell: bash
 
       - name: Create Package
         run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash;
@@ -33,10 +39,10 @@ jobs:
           GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
 
-      # Double Release
+      # # Double Release
       # - name: Create Classic Package
       #   run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -g 1.13.2;
-      #   if: secrets.DOUBLE_RELEASE == true ## BROKEN
+      #   if: '!contains( github.ref, ''beta'')'
       #   env:
       #     CF_API_KEY: ${{ secrets.CF_API_KEY }}
       #     GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
