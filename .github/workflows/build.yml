@@ -10,6 +10,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
+      WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
     steps:
       - uses: actions/checkout@v1
       - name: Install and run Luacheck
@@ -18,41 +22,28 @@ jobs:
           luarocks install --local luacheck
           /home/runner/.luarocks/bin/luacheck . --no-color -q
 
-      - uses: actions/setup-ruby@v1
-      - name: Send Webhook Notification
-        if: failure()
-        env:
-          JOB_STATUS: ${{ job.status }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          HOOK_OS_NAME: ${{ runner.os }}
-          WORKFLOW_NAME: ${{ github.workflow }}
-        run: |
-          git clone https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
-          bash webhook/send.sh $JOB_STATUS $DISCORD_WEBHOOK_URL
-        shell: bash
+      # - uses: actions/setup-ruby@v1
+      # - name: Send Webhook Notification
+      #   if: failure()
+      #   env:
+      #     JOB_STATUS: ${{ job.status }}
+      #     DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      #     HOOK_OS_NAME: ${{ runner.os }}
+      #     WORKFLOW_NAME: ${{ github.workflow }}
+      #   run: |
+      #     git clone https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
+      #     bash webhook/send.sh $JOB_STATUS $DISCORD_WEBHOOK_URL
+      #   shell: bash
 
       - name: Create Package
         run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash;
         if: '!contains( github.ref, ''beta'')'
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
-          WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
-
+        
       # # Double Release
       # - name: Create Classic Package
       #   run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -g 1.13.2;
       #   if: '!contains( github.ref, ''beta'')'
-      #   env:
-      #     CF_API_KEY: ${{ secrets.CF_API_KEY }}
-      #     GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
-      #     WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
 
       - name: Create Pre-Release Package
         run: curl -s https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh | bash -s -- -p 0 -w 0;
         if: 'contains( github.ref, ''beta'')'
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          GITHUB_OAUTH: ${{ secrets.GITHUB_OAUTH }}
-          WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
-
