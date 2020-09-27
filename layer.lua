@@ -60,6 +60,7 @@ function Layer:PLAYER_LOGIN()
 
     local loadedGroups = {}
     if WeakAuras then
+        --[[
         hooksecurefunc(WeakAuras, "LoadDisplays", function(toLoad, ...)
             table.wipe(loadedGroups)
 
@@ -80,6 +81,7 @@ function Layer:PLAYER_LOGIN()
                 end
             end
         end)
+        ]]
     end
 
     SLASH_INTERFACELAYER1= "/layer"
